@@ -17,10 +17,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os
 import unittest
 import json
-import shutil
-import pytest
 
-from pytorch_pretrained_bert.tokenization_openai import OpenAIGPTTokenizer, PRETRAINED_VOCAB_ARCHIVE_MAP
+from pytorch_pretrained_bert.tokenization_openai import OpenAIGPTTokenizer
 
 
 class OpenAIGPTTokenizationTest(unittest.TestCase):
@@ -34,13 +32,13 @@ class OpenAIGPTTokenizationTest(unittest.TestCase):
         vocab_tokens = dict(zip(vocab, range(len(vocab))))
         merges = ["#version: 0.2", "l o", "lo w", "e r</w>", ""]
         with open("/tmp/openai_tokenizer_vocab_test.json", "w") as fp:
-            fp.write(json.dumps(vocab_tokens))
+            json.dump(vocab_tokens, fp)
             vocab_file = fp.name
         with open("/tmp/openai_tokenizer_merges_test.txt", "w") as fp:
             fp.write("\n".join(merges))
             merges_file = fp.name
 
-        tokenizer = OpenAIGPTTokenizer(vocab_file, merges_file, special_tokens=["<unk>", "<pad>"])
+        tokenizer = OpenAIGPTTokenizer(vocab_file, merges_file, special_tokens=["<unk>"])
         os.remove(vocab_file)
         os.remove(merges_file)
 
@@ -53,27 +51,6 @@ class OpenAIGPTTokenizationTest(unittest.TestCase):
         input_bpe_tokens = [14, 15, 20]
         self.assertListEqual(
             tokenizer.convert_tokens_to_ids(input_tokens), input_bpe_tokens)
-
-        vocab_file, merges_file, special_tokens_file = tokenizer.save_vocabulary(vocab_path="/tmp/")
-        tokenizer_2 = OpenAIGPTTokenizer.from_pretrained("/tmp/")
-        os.remove(vocab_file)
-        os.remove(merges_file)
-        os.remove(special_tokens_file)
-
-        self.assertListEqual(
-            [tokenizer.encoder, tokenizer.decoder, tokenizer.bpe_ranks,
-             tokenizer.special_tokens, tokenizer.special_tokens_decoder],
-            [tokenizer_2.encoder, tokenizer_2.decoder, tokenizer_2.bpe_ranks,
-             tokenizer_2.special_tokens, tokenizer_2.special_tokens_decoder])
-
-    @pytest.mark.slow
-    def test_tokenizer_from_pretrained(self):
-        cache_dir = "/tmp/pytorch_pretrained_bert_test/"
-        for model_name in list(PRETRAINED_VOCAB_ARCHIVE_MAP.keys())[:1]:
-            tokenizer = OpenAIGPTTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-            shutil.rmtree(cache_dir)
-            self.assertIsNotNone(tokenizer)
-
 
 if __name__ == '__main__':
     unittest.main()
