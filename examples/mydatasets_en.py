@@ -30,7 +30,7 @@ def ir_dataset(TEXT, args):
 
     return train_iter, val_iter
 
-def stance_dataset(TEXT, LABEL, args):
+def stance_dataset(TEXT, LABEL, args, testing = True):
     tv_datafields = [("label", LABEL), ("query", TEXT), ("doc", TEXT)]
     trn, vld = data.TabularDataset.splits(
                    path=args.stance_data_path, # the root directory where the stance data lies
@@ -38,13 +38,6 @@ def stance_dataset(TEXT, LABEL, args):
                    format='tsv',
                    skip_header=True,
                    fields=tv_datafields)
-
-    test_datafields = [("query", TEXT), ("doc", TEXT)]
-    test = data.TabularDataset(
-                   path=os.path.join(args.stance_data_path, "test.tsv"),
-                   format='tsv',
-                   skip_header=True,
-                   fields=test_datafields)
 
     TEXT.build_vocab(trn)
 
@@ -66,11 +59,20 @@ def stance_dataset(TEXT, LABEL, args):
           sort_within_batch=False, 
           repeat=False)
 
-    test_iter = data.Iterator(
-          test,
-          batch_size=args.batch_size*4,
-          shuffle = False, 
-          sort_within_batch=False, 
-          repeat=False)
-
-    return train_iter, val_iter, test_iter
+    if testing:
+      test_datafields = [("query", TEXT), ("doc", TEXT)]
+      test = data.TabularDataset(
+                   path=os.path.join(args.stance_data_path, "test.tsv"),
+                   format='tsv',
+                   skip_header=True,
+                   fields=test_datafields)
+      test_iter = data.Iterator(
+            test,
+            batch_size=args.batch_size*4,
+            shuffle = False, 
+            sort_within_batch=False, 
+            repeat=False)
+      return train_iter, val_iter, test_iter
+    
+    else:
+      return train_iter, val_iter

@@ -41,7 +41,7 @@ from pytorch_pretrained_bert.modeling import BertForSequenceClassification, Bert
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
 
-import mydatasets
+import mydatasets_en
 import torchtext.data as data
 import torch.nn.functional as F
 
@@ -583,9 +583,9 @@ def idx_to_text(text_field, sents):
         sent = ''
         for idx in sent_idx:
             if idx != pad_idx:
-                sent += text_field.vocab.itos[idx]
+                sent += text_field.vocab.itos[idx] + " "
 
-        sents_text.append(sent)
+        sents_text.append(sent.strip())
 
     return sents_text
 
@@ -621,7 +621,7 @@ def to_bert_input_stance(args, text_field, batch, label_list, tokenizer, output_
     src_batch_txt = idx_to_text(text_field, src_batch)
     tgt_batch_txt = idx_to_text(text_field, tgt_batch)
     label_batch = label_batch.numpy()
-    label_batch = [0 if l == 0 else 1 for l in label_batch]
+    # label_batch = [0 if l == 0 else 1 for l in label_batch]
 
     # examples
     examples = []
@@ -802,15 +802,16 @@ def main():
 
     # '''. prepare data
     # args.stance_data_path = "/home/Vachel/github/pytorch-pretrained-BERT/data/stanceChinese"
-    args.stance_data_path = "/home/Vachel/github/pytorch-pretrained-BERT/data/TD_stance"
+    # args.stance_data_path = "/home/Vachel/github/pytorch-pretrained-BERT/data/TD_stance"
+    args.stance_data_path = "/home/Vachel/github/pytorch-pretrained-BERT/data/fnc1"
     args.data_path = args.data_dir
     args.batch_size = args.train_batch_size
-    tokenize = lambda x: [i for i in x][:300]
+    tokenize = lambda x: x.split()[:300]
     text_field = data.Field(sequential=True, tokenize=tokenize, lower=True, batch_first = True)
     label_field = data.Field(sequential=False, use_vocab=False)
 
-    train_stance_iter, dev_stance_iter, test_iter = mydatasets.stance_dataset(text_field, label_field, args)
-    train_iter, dev_iter = mydatasets.ir_dataset(text_field, args)
+    train_stance_iter, dev_stance_iter = mydatasets_en.stance_dataset(text_field, label_field, args, testing = False)
+    train_iter, dev_iter = mydatasets_en.ir_dataset(text_field, args)
     # '''
 
     if args.local_rank == -1 or args.no_cuda:
@@ -856,7 +857,7 @@ def main():
     # '''
     # label_list = processor.get_labels()
     # num_labels = len(label_list)
-    label_list = [0, 1]
+    label_list = [0, 1, 2, 3]
     num_labels = len(label_list)
     # '''
 
